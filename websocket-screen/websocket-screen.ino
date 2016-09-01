@@ -23,15 +23,15 @@ WebSocketClient webSocketClient;
 WiFiClient client;
 
 void setup(void) {
-//ESP.wdtDisable();                               // used to debug, disable wachdog timer, 
+//ESP.wdtDisable();                               // used to debug, disable wachdog timer,
   Serial.begin(115200);                           // full speed to monitor
   Serial.println("Setup start");
   Wire.begin(0,2);                                // Initialize I2C and OLED Display
-  init_OLED();                                    // 
- 
+  init_OLED();                                    //
+
   connectWifi();
   connectWebsocket();
-  
+
   // Set up the endpoints for HTTP server,  Endpoints can be written as inline functions:
   Serial.print(analogRead(A0));
   int test = 13;
@@ -53,19 +53,19 @@ void connectWifi(){
    clear_display();
 
   Serial.print("SSID : ");                        // prints SSID in monitor
-  Serial.println(SSID);                           // to monitor             
+  Serial.println(SSID);                           // to monitor
   sendStrXY("SSID :" ,0,0);  sendStrXY(SSID,0,7); // prints SSID on OLED
- 
+
   char result[16];
   sprintf(result, "%3d.%3d.%3d.%3d", WiFi.localIP()[0], WiFi.localIP()[1], WiFi.localIP()[2], WiFi.localIP()[3]);
   Serial.println();Serial.println(result);
   sendStrXY(result,2,0);
 
   Serial.println("WebServer ready!   ");
-  sendStrXY("WebServer ready!",4,0);              // OLED first message 
+  sendStrXY("WebServer ready!",4,0);              // OLED first message
   Serial.println(WiFi.localIP());                 // Serial monitor prints localIP
 
-  
+
 }
 void connectWebsocket() {
    Serial.println("Connecting websocket...");
@@ -101,14 +101,14 @@ void loop(void) {
       Serial.println(data);
 
       clear_display();
-      sendStrXY("Received:" ,0,0); 
+      sendStrXY("Received:" ,0,0);
       sendStrXY(data.c_str(),1,0);
 
       //webSocketClient.sendData(data); //Send data back
 
     }
   } else {
-    connectWebsocket();    
+    connectWebsocket();
   }
 }
 
@@ -141,8 +141,8 @@ static void clear_display(void)
 {
   unsigned char i,k;
   for(k=0;k<8;k++)
-  {	
-    setXY(k,0);    
+  {
+    setXY(k,0);
     {
       for(i=0;i<(128 + 2 * offset);i++)     //locate all COL
       {
@@ -154,13 +154,13 @@ static void clear_display(void)
 }
 
 //==========================================================//
-// Actually this sends a byte, not a char to draw in the display. 
+// Actually this sends a byte, not a char to draw in the display.
 // Display's chars uses 8 byte font the small ones and 96 bytes
 // for the big number font.
-static void SendChar(unsigned char data) 
+static void SendChar(unsigned char data)
 {
   //if (interrupt && !doing_menu) return;   // Stop printing only if interrupt is call but not in button functions
-  
+
   Wire.beginTransmission(OLED_address); // begin transmitting
   Wire.write(0x40);//data mode
   Wire.write(data);
@@ -169,17 +169,17 @@ static void SendChar(unsigned char data)
 
 //==========================================================//
 // Prints a display char (not just a byte) in coordinates X Y,
-// being multiples of 8. This means we have 16 COLS (0-15) 
+// being multiples of 8. This means we have 16 COLS (0-15)
 // and 8 ROWS (0-7).
 static void sendCharXY(unsigned char data, int X, int Y)
 {
   setXY(X, Y);
   Wire.beginTransmission(OLED_address); // begin transmitting
   Wire.write(0x40);//data mode
-  
-  for(int i=0;i<8;i++)          
+
+  for(int i=0;i<8;i++)
     Wire.write(pgm_read_byte(myFont[data-0x20]+i));
-    
+
   Wire.endTransmission();    // stop transmitting
 }
 
@@ -255,23 +255,23 @@ static void init_OLED(void)
     sendcommand(0x14);
     sendcommand(0x20);             //MEMORYMODE
     sendcommand(0x00);             //0x0 act like ks0108
-    
+
     //sendcommand(0xA0 | 0x1);      //SEGREMAP   //Rotate screen 180 deg
     sendcommand(0xA0);
-    
+
     //sendcommand(0xC8);            //COMSCANDEC  Rotate screen 180 Deg
     sendcommand(0xC0);
-    
+
     sendcommand(0xDA);            //0xDA
     sendcommand(0x12);           //COMSCANDEC
     sendcommand(0x81);           //SETCONTRAS
     sendcommand(0xCF);           //
-    sendcommand(0xd9);          //SETPRECHARGE 
-    sendcommand(0xF1); 
-    sendcommand(0xDB);        //SETVCOMDETECT                
+    sendcommand(0xd9);          //SETPRECHARGE
+    sendcommand(0xF1);
+    sendcommand(0xDB);        //SETVCOMDETECT
     sendcommand(0x40);
-    sendcommand(0xA4);        //DISPLAYALLON_RESUME        
-    sendcommand(0xA6);        //NORMALDISPLAY             
+    sendcommand(0xA4);        //DISPLAYALLON_RESUME
+    sendcommand(0xA6);        //NORMALDISPLAY
 
   clear_display();
   sendcommand(0x2e);            // stop scroll
@@ -281,11 +281,9 @@ static void init_OLED(void)
     sendcommand(0xc8);
     delay(1000);
   //----------------------------REVERSE comments----------------------------//
-  // sendcommand(0xa7);  //Set Inverse Display  
+  // sendcommand(0xa7);  //Set Inverse Display
   // sendcommand(0xae);		//display off
   sendcommand(0x20);            //Set Memory Addressing Mode
   sendcommand(0x00);            //Set Memory Addressing Mode ab Horizontal addressing mode
-  //  sendcommand(0x02);         // Set Memory Addressing Mode ab Page addressing mode(RESET)  
+  //  sendcommand(0x02);         // Set Memory Addressing Mode ab Page addressing mode(RESET)
 }
-
-
