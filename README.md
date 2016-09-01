@@ -1,5 +1,7 @@
 ## ESP8266 OLED + Websocket
 
+![screens/timestamp.png](screens/timestamp.png)
+
 Combination of another ESP8266 projects:
 
 * [ESP8266 OLED](https://hackaday.io/project/6132-esp8266oled)
