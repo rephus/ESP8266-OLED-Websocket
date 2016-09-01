@@ -1,7 +1,22 @@
 
 var ws = require("nodejs-websocket");
 
-var connections = {};
+var clients = {};
+
+var clientsWithoutConnections = function(){
+  var newClients = {};
+  var clientIds = Object.keys(clients);
+
+  for (var c in clientIds ){
+      var client = clients[clientIds[c]];
+      newClients[client.id] = {
+        id: client.id,
+        created: client.created,
+        device: client.device
+      };
+  }
+  return newClients;
+};
 
 var server = ws.createServer(function (conn) {
 
@@ -9,38 +24,78 @@ var server = ws.createServer(function (conn) {
 
     console.log("New connection: " +connectionId);
 
-     connections[connectionId] = {
+     clients[connectionId] = {
        id: connectionId,
        created: new Date().getTime(),
+       connection: conn,
+       device: undefined
      };
-    console.log("Total connections " + Object.keys(connections).length);
-
-    var interval = setInterval(function(){
-      console.log("Sending data");
-      var data = "" + new Date().getTime();
-      for (var c in connections){
-        var connection = connections[c];
-
-        conn.sendText(data);
-      }
-    },1000);
+    console.log("Total connections " + Object.keys(clients).length);
 
     conn.on("text", function (str) {
-        console.log("Received "+str);
+        console.log("Received TEXT from "+connectionId+ ": "+str);
+        try {
+          var json = JSON.parse(str);
+          processJson(connectionId, json);
+        } catch(e){
+          console.log("Unable to parse json "+ str+": "+e);
+        }
     });
+
 
     conn.on("close", function (code, reason) {
         console.log("Connection closed ", connectionId);
 
-        delete connections[connectionId];
-        console.log("Total connections " + Object.keys(connections).length);
-        clearInterval(interval);
+        delete clients[connectionId];
+        console.log("Total connections " + Object.keys(clients).length);
+        //clearInterval(interval);
+
+        sendClients();
     });
 
 }).listen(8001);
 
+var processJson = function(connectionId, json){
+
+  var type = json.type;
+  switch (json.type) {
+    case "message":
+      broadcast(json.value);
+      break;
+    case "device":
+      console.log("Updating device "+connectionId+ ": "+ json.value);
+      clients[connectionId].device = json.value;
+      sendClients();
+      break;
+  }
+};
+
+var sendClients = function(){
+  var message = {clients: clientsWithoutConnections()};
+  var txt = JSON.stringify(message, null, 2);
+  broadcast (txt, "web");
+};
+
+var broadcast = function(message, device){
+  var clientIds = Object.keys(clients);
+
+  for (var c in clientIds ){
+    var client = clients[clientIds[c]];
+    if (!device || (device && client.device == device)) {
+      var conn = client.connection;
+      conn.sendText(message);
+    }
+  }
+};
+
+//Send messages to all connected clients at the same time every 5 seconds
+/*var interval = setInterval(function(){
+  var data = "" + new Date().getTime();
+  broadcast(data);
+},5000);*/
+
 console.log("Websocket server started");
 
 var sendJson = function(conn, json){
-  conn.sendText(JSON.stringify(json));
+  conn.sendText(JSON.stringify(json, null, 2));
 };

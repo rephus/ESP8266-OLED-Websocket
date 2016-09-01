@@ -3,18 +3,21 @@ Version 1.0 supports OLED display's with either SDD1306 or with SH1106 controlle
 */
 
 #include <ESP8266WiFi.h>
-#include <ESP8266WebServer.h>
 #include <WebSocketClient.h>
 #include <Wire.h>
 #include "font.h"
 //#define offset 0x00    // SDD1306                      // offset=0 for SSD1306 controller
 #define offset 0x02    // SH1106                       // offset=2 for SH1106 controller
 #define OLED_address  0x3c                             // all the OLED's I have seen have this address
-#define SSID "Marphus"                              // insert your SSID
-#define PASS "fafafafafa"                              // insert your password
 
-#define WEBSOCKET_SERVER "192.168.2.100"
-#define WEBSOCKET_PORT 8001
+#define SSID "DEFINE_ME"                              // insert your SSID
+#define PASS "DEFINE_ME"                              // insert your password
+
+#define WEBSOCKET_SERVER "192.168.x.x"
+#define WEBSOCKET_PORT 80
+
+// You can set your own credentials in credentials.h to override the default settings here
+#include "credentials.h"
 
 WebSocketClient webSocketClient;
 WiFiClient client;
@@ -25,7 +28,21 @@ void setup(void) {
   Serial.println("Setup start");
   Wire.begin(0,2);                                // Initialize I2C and OLED Display
   init_OLED();                                    // 
-  reset_display();
+ 
+  connectWifi();
+  connectWebsocket();
+  
+  // Set up the endpoints for HTTP server,  Endpoints can be written as inline functions:
+  Serial.print(analogRead(A0));
+  int test = 13;
+  pinMode(test,OUTPUT);
+  digitalWrite(test,HIGH);
+  delay(1000);
+  digitalWrite(test,LOW);
+}
+
+void connectWifi(){
+   reset_display();
   sendStrXY("Connecting to:" ,0,0);  sendStrXY(SSID,1,0);
   WiFi.begin(SSID, PASS);                         // Connect to WiFi network
   while (WiFi.status() != WL_CONNECTED) {         // Wait for connection
@@ -33,29 +50,7 @@ void setup(void) {
     Serial.print(".");
   }
 
-   // Connect to the websocket server
-  if (client.connect(WEBSOCKET_SERVER, WEBSOCKET_PORT)) {
-    Serial.println("Connected");
-  } else {
-    Serial.println("Connection failed.");
-    while(1) {
-      // Hang on failure
-    }
-  }
-
-    webSocketClient.path = "/";
-  webSocketClient.host = "192.168.2.100:8001";
-  if (webSocketClient.handshake(client)) {
-    Serial.println("Handshake successful");
-  } else {
-    Serial.println("Handshake failed.");
-    while(1) {
-      // Hang on failure
-    }  
-  }
-  
-  // Set up the endpoints for HTTP server,  Endpoints can be written as inline functions:
-  clear_display();
+   clear_display();
 
   Serial.print("SSID : ");                        // prints SSID in monitor
   Serial.println(SSID);                           // to monitor             
@@ -69,14 +64,30 @@ void setup(void) {
   Serial.println("WebServer ready!   ");
   sendStrXY("WebServer ready!",4,0);              // OLED first message 
   Serial.println(WiFi.localIP());                 // Serial monitor prints localIP
-  Serial.print(analogRead(A0));
-  int test = 13;
-  pinMode(test,OUTPUT);
-  digitalWrite(test,HIGH);
-  delay(1000);
-  digitalWrite(test,LOW);
-}
 
+  
+}
+void connectWebsocket() {
+   Serial.println("Connecting websocket...");
+
+   if (client.connect(WEBSOCKET_SERVER, WEBSOCKET_PORT)) {
+    Serial.println("Connected");
+    sendStrXY("Websocket OK!",5,0);
+  } else {
+    Serial.println("Connection failed.");
+    sendStrXY("Websocket failed",5,0);
+  }
+
+  webSocketClient.path = "/";
+  webSocketClient.host = "192.168.2.100:8001";
+  if (webSocketClient.handshake(client)) {
+    Serial.println("Handshake successful");
+  } else {
+    Serial.println("Handshake failed.");
+  }
+
+  webSocketClient.sendData("{\"type\":\"device\", \"value\":\"esp8\"}");
+}
 
 void loop(void) {
   // server.handleClient();                        // checks for incoming messages
@@ -93,9 +104,11 @@ void loop(void) {
       sendStrXY("Received:" ,0,0); 
       sendStrXY(data.c_str(),1,0);
 
-      webSocketClient.sendData(data); //Send data back
+      //webSocketClient.sendData(data); //Send data back
 
     }
+  } else {
+    connectWebsocket();    
   }
 }
 
