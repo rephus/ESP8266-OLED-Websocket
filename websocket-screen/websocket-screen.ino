@@ -10,11 +10,11 @@ Version 1.0 supports OLED display's with either SDD1306 or with SH1106 controlle
 //#define offset 0x00    // SDD1306                      // offset=0 for SSD1306 controller
 #define offset 0x02    // SH1106                       // offset=2 for SH1106 controller
 #define OLED_address  0x3c                             // all the OLED's I have seen have this address
-#define SSID "Marphus"                              // insert your SSID
-#define PASS "fafafafafa"                              // insert your password
+#define SSID "DEFINE_ME"                              // insert your SSID
+#define PASS "DEFINE_ME"                              // insert your password
 
-#define WEBSOCKET_SERVER "192.168.2.100"
-#define WEBSOCKET_PORT 8001
+#define WEBSOCKET_SERVER "192.168.x.x"
+#define WEBSOCKET_PORT 80
 
 WebSocketClient webSocketClient;
 WiFiClient client;
