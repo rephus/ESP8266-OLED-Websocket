@@ -118,3 +118,8 @@ console.log("Websocket server started");
 var sendJson = function(conn, json){
   conn.sendText(JSON.stringify(json, null, 2));
 };
+
+process.on('uncaughtException', function (err) {
+    console.error(err.stack);
+    console.log("Node NOT Exiting...");
+});
