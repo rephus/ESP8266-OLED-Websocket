@@ -1,7 +1,3 @@
-/*
-Version 1.0 supports OLED display's with either SDD1306 or with SH1106 controller
-*/
-
 #include <ESP8266WiFi.h>
 #include <WebSocketClient.h>
 #include <ArduinoJson.h>
@@ -31,7 +27,7 @@ void setup(void) {
   Serial.begin(115200);                           // full speed to monitor
   Serial.println("Setup start");
   Wire.begin(0,2);                                // Initialize I2C and OLED Display
-  init_OLED();                                    //
+  init_OLED();                                   
 
   connectWifi();
   connectWebsocket();
@@ -55,12 +51,8 @@ void connectWifi(){
   sendStrXY("SSID :" ,0,0);  sendStrXY(SSID,0,7); // prints SSID on OLED
 
   char* result = localIP(); 
-  Serial.print("Local IP: ");
-  Serial.println(result);
   sendStrXY(result,2,0);
-
-  Serial.println("WebServer ready!   ");
-  sendStrXY("WebServer ready!",4,0);              // OLED first message
+  Serial.print("Local IP: ");
   Serial.println(WiFi.localIP());                 // Serial monitor prints localIP
 }
 
@@ -81,27 +73,25 @@ void connectWebsocket() {
     sendStrXY("OFF ",6,0);
   }
 
-  Serial.println("Doing handshacke...");
+  Serial.println("Doing Handshake...");
   webSocketClient.path = "/";
   webSocketClient.host = WEBSOCKET_HOST;
   if (webSocketClient.handshake(client)) Serial.println("Handshake successful");
   else Serial.println("Handshake failed.");
   
-
   Serial.println("Sending data to server");
 
   send("device", "esp8"); //Identify device on connection
   send("time", "get"); //Request time to server
-  send("ip", localIP());
+ //  send("ip", String(localIP())); //Unable to parse json {"type":"ip", "value":": SyntaxError: Unexpected end of input
+
+  sendStats();
 }
 
 void printTime(){
 
   char result[15];
   sprintf(result, "%02d/%02d %02d:%02d:%02d", day(), month(), hour(),minute(), second());
-   Serial.print("Printing time: ");
-
-  Serial.println(result);
   sendStrXY(result,0,0);
 }
 String data;
@@ -110,9 +100,9 @@ void loop(void) {
   // server.handleClient();                        // checks for incoming messages
   //clear_display();
 
-  printTime();
+    printTime();
 
-  log(String(ESP.getFreeHeap())); 
+  if (second() == 0) sendStats(); //Send stats every minute
   
   if (client.connected()) receiveData();
   else connectWebsocket();
@@ -120,8 +110,19 @@ void loop(void) {
   delay(1000);
 }
 
+void sendStats() {
+  log(String(ESP.getFreeHeap())); 
+
+}
+
 void send(String type, String value) {
    if (client.connected()) webSocketClient.sendData("{\"type\":\""+type+"\", \"value\":\""+value+"\"}"); 
+   else Serial.println("Client not connected, unable to send message");
+
+}
+
+void send(String type, long value) {
+   if (client.connected()) webSocketClient.sendData("{\"type\":\""+type+"\", \"value\":"+value+"}"); 
    else Serial.println("Client not connected, unable to send message");
 
 }
