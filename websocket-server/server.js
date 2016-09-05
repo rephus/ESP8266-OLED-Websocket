@@ -67,6 +67,20 @@ var processJson = function(connectionId, json){
       clients[connectionId].device = json.value;
       sendClients();
       break;
+
+    case "time":
+
+      var now = new Date();
+      var offset = now.getTimezoneOffset() * 60; // add offset from tiemzone in seconds
+      var seconds = parseInt( now.getTime() / 1000); // in seconds
+      console.log("Sending time to  "+connectionId +": "+ seconds + " with offset " + offset);
+
+      var time = {
+        "type": "time",
+        "value": seconds - offset
+      };
+      broadcastJson(time, "esp8");
+      break;
   }
 };
 
@@ -74,6 +88,11 @@ var sendClients = function(){
   var message = {clients: clientsWithoutConnections()};
   var txt = JSON.stringify(message, null, 2);
   broadcast (txt, "web");
+};
+
+var broadcastJson = function(json, device){
+  var msg = JSON.stringify(json);
+  broadcast(msg, device);
 };
 
 var broadcast = function(message, device){

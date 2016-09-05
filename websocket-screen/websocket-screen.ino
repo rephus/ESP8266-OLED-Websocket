@@ -4,6 +4,9 @@ Version 1.0 supports OLED display's with either SDD1306 or with SH1106 controlle
 
 #include <ESP8266WiFi.h>
 #include <WebSocketClient.h>
+#include <ArduinoJson.h>
+#include <Time.h>
+
 #include <Wire.h>
 #include "font.h"
 //#define offset 0x00    // SDD1306                      // offset=0 for SSD1306 controller
@@ -21,6 +24,9 @@ Version 1.0 supports OLED display's with either SDD1306 or with SH1106 controlle
 
 WebSocketClient webSocketClient;
 WiFiClient client;
+
+StaticJsonBuffer<200> jsonBuffer;
+
 
 void setup(void) {
 //ESP.wdtDisable();                               // used to debug, disable wachdog timer,
@@ -71,11 +77,11 @@ void connectWebsocket() {
    Serial.println("Connecting websocket...");
 
    if (client.connect(WEBSOCKET_SERVER, WEBSOCKET_PORT)) {
-    Serial.println("Connected");
-    sendStrXY("Websocket OK!",5,0);
+    Serial.println("Websocket Connected");
+    sendStrXY("ON ",6,0);
   } else {
-    Serial.println("Connection failed.");
-    sendStrXY("Websocket failed",5,0);
+    Serial.println("Websocket Connection failed.");
+    sendStrXY("OFF ",6,0);
   }
 
   webSocketClient.path = "/";
@@ -86,30 +92,95 @@ void connectWebsocket() {
     Serial.println("Handshake failed.");
   }
 
-  webSocketClient.sendData("{\"type\":\"device\", \"value\":\"esp8\"}");
+  webSocketClient.sendData("{\"type\":\"device\", \"value\":\"esp8\"}"); //Identify device on connection
+  webSocketClient.sendData("{\"type\":\"time\", \"value\":\"get\"}"); //Request time to server
+
+}
+
+String digit(int d){
+  if (d<10) return "0" + d;
+  else return String(d);
+}
+
+void printTime(){
+    Serial.print("Printing time: ");
+    Serial.print(hour());
+    Serial.print(":");
+    Serial.println(minute());
+
+   // setXY(0,0);
+
+    String time = digit(hour()) +":"+  digit(minute()) +":"+ digit(second()) ;
+    /*
+    display2digits(hour());
+    SendChar(':');
+    display2digits(minute());
+        SendChar(':');
+    display2digits(second());
+*/
+    sendStrXY(time.c_str(),0,0);
 }
 
 void loop(void) {
   // server.handleClient();                        // checks for incoming messages
 
   String data;
+  printTime();
+  
   if (client.connected()) {
+    //receiveData();
 
-   webSocketClient.getData(data);
+    webSocketClient.getData(data);
     if (data.length() > 0) {
       Serial.print("Received data: ");
       Serial.println(data);
 
       clear_display();
-      sendStrXY("Received:" ,0,0);
-      sendStrXY(data.c_str(),1,0);
+      sendStrXY("Received:" ,1,0);
+      sendStrXY(data.c_str(),2,0);
 
-      //webSocketClient.sendData(data); //Send data back
-
+      JsonObject& json = jsonBuffer.parseObject(data);
+      if (json.success()) processJson(json);
+        
     }
+    
   } else {
     connectWebsocket();
   }
+  delay(1000);
+}
+
+
+
+String data;
+
+
+void receiveData(){
+    webSocketClient.getData(data);
+    if (data.length() > 0) {
+      Serial.print("Received data: ");
+      Serial.println(data);
+
+      clear_display();
+      sendStrXY("Received:" ,1,0);
+      sendStrXY(data.c_str(),2,0);
+
+      JsonObject& json = jsonBuffer.parseObject(data);
+      if (json.success()) processJson(json);
+        
+    }
+  
+}
+
+void processJson(JsonObject& json) {
+    String type = json["type"].as<String>();
+
+    if (type.equals("time") ){
+      long t = json["value"];
+      Serial.print("Setting time: ");
+      Serial.println(t);
+      setTime(t);  
+    }
 }
 
 //==========================================================//
