@@ -95,30 +95,30 @@ void printTime(){
   sprintf(result, "%02d/%02d %02d:%02d:%02d", day(), month(), hour(),minute(), second());
   sendStrXY(result,0,0);
 }
-String data;
+
 
 void loop(void) {
-  // server.handleClient();                        // checks for incoming messages
-  //clear_display();
+    // server.handleClient();                        // checks for incoming messages
+    //clear_display();
+
+    if (client.connected()) receiveData();
+    else connectWebsocket();
+    
+    //https://github.com/esp8266/Arduino/blob/master/doc/libraries.md#esp-specific-apis
+    //http://www.bntdumas.com/2015/07/23/how-to-battery-powered-temperature-and-humidity-sensors/
+   /* log("Before sleep");
+    ESP.deepSleep(1000000 * 5);
+    log ("Wake up");*/
 
     printTime();
 
-  if (second() == 0) sendStats(); //Send stats every minute
-  
-  if (client.connected()) receiveData();
-  else connectWebsocket();
+    if (second() == 0) sendStats(); //Send stats every minute
 
-  //delay(1000);
-
-  //https://github.com/esp8266/Arduino/blob/master/doc/libraries.md#esp-specific-apis
-  //http://www.bntdumas.com/2015/07/23/how-to-battery-powered-temperature-and-humidity-sensors/
- /* log("Before sleep");
-  ESP.deepSleep(1000000 * 5);
-  log ("Wake up");*/
+   delay(1000);
 }
 
 void sendStats() {
-  webSocketClient.sendData("{\"type\":\"stats\", \"reset\":\""+ESP.getResetReason()+"\",\"memory\":"+ESP.getFreeHeap()+",\"vcc\":"+ESP.getVcc()+"}"); 
+  webSocketClient.sendData("{\"type\":\"stats\", \"time\": "+String(int(millis() / 1000) )+", \"reset\":\""+ESP.getResetReason()+"\",\"memory\":"+ESP.getFreeHeap()+",\"vcc\":"+ESP.getVcc()+"}"); 
 }
 
 void send(String type, String value) {
@@ -140,6 +140,7 @@ void log(String str) {
 }
 
 void receiveData(){
+  String data;
     webSocketClient.getData(data);
     if (data.length() > 0) {
       Serial.print("Received data: ");
@@ -147,8 +148,6 @@ void receiveData(){
 
       JsonObject& json = jsonBuffer.parseObject(data);
       if (json.success()) processJson(json);
-
-      data = "";
     }
   
 }
@@ -166,6 +165,8 @@ void processJson(JsonObject& json) {
       Serial.print("Got notification: ");
       Serial.println(notification);
       log(notification); 
+
+      clear_display();
 
       sendStrXY(notification.c_str(),2,0);
     }
