@@ -27,7 +27,9 @@ void setup(void) {
   Serial.begin(115200);                           // full speed to monitor
   Serial.println("Setup start");
   Wire.begin(0,2);                                // Initialize I2C and OLED Display
-  init_OLED();                                   
+  init_OLED();              
+
+// ADC_MODE(ADC_VCC); //ENable ESP.getVcc() 
 
   connectWifi();
   connectWebsocket();
@@ -106,12 +108,17 @@ void loop(void) {
   if (client.connected()) receiveData();
   else connectWebsocket();
 
-  delay(1000);
+  //delay(1000);
+
+  //https://github.com/esp8266/Arduino/blob/master/doc/libraries.md#esp-specific-apis
+  //http://www.bntdumas.com/2015/07/23/how-to-battery-powered-temperature-and-humidity-sensors/
+ /* log("Before sleep");
+  ESP.deepSleep(1000000 * 5);
+  log ("Wake up");*/
 }
 
 void sendStats() {
-  log(String(ESP.getFreeHeap())); 
-
+  webSocketClient.sendData("{\"type\":\"stats\", \"reset\":\""+ESP.getResetReason()+"\",\"memory\":"+ESP.getFreeHeap()+",\"vcc\":"+ESP.getVcc()+"}"); 
 }
 
 void send(String type, String value) {

@@ -23,3 +23,8 @@ cd websocket-server
 npm install
 node server.js
 ```
+
+## Documentation
+
+[ESP8 specific apis](https://github.com/esp8266/Arduino/blob/master/doc/libraries.md#esp-specific-apis)
+[Low consumption on ESP8](http://www.bntdumas.com/2015/07/23/how-to-battery-powered-temperature-and-humidity-sensors/)

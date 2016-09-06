@@ -87,7 +87,10 @@ var processJson = function(connectionId, json){
       broadcastJson(time, "esp8");
       break;
     case "log":
-      //console.log("Log: "+ json.value);
+      console.log("Log: "+ json.value);
+      break;
+    case "stats":
+      console.log("Stats", json);
       break;
     default:
       console.log("Unrecognized message type: "+ type, json);
