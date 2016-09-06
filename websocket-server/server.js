@@ -1,5 +1,10 @@
 
 var ws = require("nodejs-websocket");
+var express = require("express");
+var app = express();
+var bodyParser = require('body-parser');
+
+app.use(bodyParser.json());
 
 var clients = {};
 
@@ -33,7 +38,7 @@ var server = ws.createServer(function (conn) {
     console.log("Total connections " + Object.keys(clients).length);
 
     conn.on("text", function (str) {
-        console.log("Received TEXT from "+connectionId+ ": "+str);
+        //console.log("Received TEXT from "+connectionId+ ": "+str);
         try {
           var json = JSON.parse(str);
           processJson(connectionId, json);
@@ -81,6 +86,12 @@ var processJson = function(connectionId, json){
       };
       broadcastJson(time, "esp8");
       break;
+    case "log":
+      //console.log("Log: "+ json.value);
+      break;
+    default:
+      console.log("Unrecognized message type: "+ type, json);
+
   }
 };
 
@@ -98,6 +109,8 @@ var broadcastJson = function(json, device){
 var broadcast = function(message, device){
   var clientIds = Object.keys(clients);
 
+  console.log("Sending message "+ message + " to devices " + device);
+
   for (var c in clientIds ){
     var client = clients[clientIds[c]];
     if (!device || (device && client.device == device)) {
@@ -106,6 +119,23 @@ var broadcast = function(message, device){
     }
   }
 };
+
+
+app.post('/', function(req, response){
+
+  try {
+    console.log("Received request ", req.body);
+    var notification = {type: 'notification', text:req.body.text};
+    broadcastJson(notification, "esp8");
+
+  } catch (e) {
+    postSlackMessage("Unable to process mondo request " + e);
+    response.json({error: e});
+  }
+});
+
+app.listen(8988);
+
 
 //Send messages to all connected clients at the same time every 5 seconds
 /*var interval = setInterval(function(){

@@ -1,7 +1,9 @@
 {
   "name": "websocket-demo",
   "dependencies": {
-    "nodejs-websocket": "^1.4.0"
+    "nodejs-websocket": "^1.4.0",
+    "express": "4.1.1",
+    "body-parser": "1.0.2"
   },
   "engine": {
     "node": ">=0.10.25"

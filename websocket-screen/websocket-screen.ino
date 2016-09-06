@@ -50,16 +50,15 @@ void connectWifi(){
   Serial.println(SSID);                           // to monitor
   sendStrXY("SSID :" ,0,0);  sendStrXY(SSID,0,7); // prints SSID on OLED
 
-  char* result = localIP(); 
-  sendStrXY(result,2,0);
+  sendStrXY(localIP().c_str(),2,0);
   Serial.print("Local IP: ");
   Serial.println(WiFi.localIP());                 // Serial monitor prints localIP
 }
 
-char* localIP() {
+String localIP() {
   char result[16];
   sprintf(result, "%3d.%3d.%3d.%3d", WiFi.localIP()[0], WiFi.localIP()[1], WiFi.localIP()[2], WiFi.localIP()[3]);
-  return result;
+  return String(result);
 }
 
 void connectWebsocket() {
@@ -83,7 +82,7 @@ void connectWebsocket() {
 
   send("device", "esp8"); //Identify device on connection
   send("time", "get"); //Request time to server
- //  send("ip", String(localIP())); //Unable to parse json {"type":"ip", "value":": SyntaxError: Unexpected end of input
+  send("ip", localIP()); //Unable to parse json {"type":"ip", "value":": SyntaxError: Unexpected end of input
 
   sendStats();
 }
@@ -155,6 +154,13 @@ void processJson(JsonObject& json) {
       Serial.print("Setting time: ");
       Serial.println(t);
       setTime(t);  
+    } else if (type.equals("notification") ){
+      String notification = json["text"].as<String>();
+      Serial.print("Got notification: ");
+      Serial.println(notification);
+      log(notification); 
+
+      sendStrXY(notification.c_str(),2,0);
     }
 }
 
