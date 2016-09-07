@@ -28,3 +28,4 @@ node server.js
 
 [ESP8 specific apis](https://github.com/esp8266/Arduino/blob/master/doc/libraries.md#esp-specific-apis)
 [Low consumption on ESP8](http://www.bntdumas.com/2015/07/23/how-to-battery-powered-temperature-and-humidity-sensors/)
+* [ESP8 soft reset](https://community.thinger.io/t/esp8266-smartconfig-causes-wdt-soft-resets-and-stacktraces/61/6)
